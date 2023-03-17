@@ -1,17 +1,11 @@
 import React, {useEffect, useState} from 'react';
-import {
-  Button,
-  FlatList,
-  Text,
-  TextInput,
-  View,
-  VirtualizedList,
-} from 'react-native';
+import {Button, FlatList, Text, TextInput, View} from 'react-native';
 import 'react-native-get-random-values';
 import {v4} from 'uuid';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAppState} from '@react-native-community/hooks';
+import {useTheme} from '@react-navigation/native';
 
 interface EachTodoI {
   text: string;
@@ -35,11 +29,13 @@ const createTodo = (text: string): EachTodoI => ({
 function Todo() {
   const [state, setState] = useState<TodoI>({text: '', todoList: []});
   const currentAppState = useAppState();
+  const {colors} = useTheme();
 
   useEffect(() => {
     if (currentAppState !== 'active') {
-      saveDataToAsyncStorage(state.todoList);
+      saveDataToAsyncStorage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAppState]);
 
   useEffect(() => {
@@ -50,7 +46,6 @@ function Todo() {
         )) as unknown as undefined | string | null;
         if (jsonValue) {
           const storedData = JSON.parse(jsonValue) as EachTodoI[];
-          console.log(storedData);
           setState(prev => ({...prev, todoList: storedData}));
         }
       } catch (e) {
@@ -60,7 +55,7 @@ function Todo() {
     })();
   }, []);
 
-  const saveDataToAsyncStorage = (todoList: EachTodoI[]) => {
+  const saveDataToAsyncStorage = () => {
     try {
       const jsonValue = JSON.stringify(state.todoList);
       AsyncStorage.setItem('@storage_Key', jsonValue);
@@ -79,7 +74,7 @@ function Todo() {
   };
 
   const onCancel = (id: string) => {
-    const cancelByID = (todoList: EachTodoI[], id: string) => {
+    const cancelByID = (todoList: EachTodoI[]) => {
       todoList.forEach(e => {
         if (e.id === id) {
           e.isCancelled = !e.isCancelled;
@@ -90,7 +85,7 @@ function Todo() {
 
     setState(prev => ({
       ...prev,
-      todoList: cancelByID(prev.todoList, id),
+      todoList: cancelByID(prev.todoList),
     }));
   };
 
@@ -103,8 +98,14 @@ function Todo() {
 
   return (
     <View className="mx-2">
-      <Text className="text-center font-bold text-4xl py-4">Todo App</Text>
+      <Text
+        style={{color: colors.text}}
+        className="text-center font-bold text-4xl py-4">
+        Todo App
+      </Text>
       <TextInput
+        style={{color: colors.text}}
+        placeholderTextColor={colors.text}
         className="p-4 text-sm border-gray-600 border rounded-md mb-2"
         placeholder="Enter Todo To Save ..."
         onChangeText={e => {
@@ -127,6 +128,7 @@ function Todo() {
           renderItem={({item, index}) => (
             <View className="flex flex-row justify-between">
               <Text
+                style={{color: colors.text}}
                 className={`text-lg my-1 ${item.isCancelled && 'line-through'}`}
                 onPress={() => {
                   onCancel(item.id);
